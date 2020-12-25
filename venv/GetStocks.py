@@ -3,7 +3,9 @@ from bs4 import BeautifulSoup
 import urllib.request, re
 import pandas as pd
 import csv
-
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+import time
 
 def get_data():
     url = "https://tw.stock.yahoo.com/class"
@@ -26,7 +28,7 @@ def get_data():
         # print(get_link)
     # print(stock_urls)
     # ------------------------
-    with open('stock_ID.csv', 'w', newline='', encoding='utf-8') as csvfile:
+    with open('stock_ID.csv', 'w', newline='', encoding='utf-8-sig') as csvfile:
         _writer = csv.writer(csvfile)
         _writer.writerow(["ID", "NAME"])
         for stock_urls_i in range(0, len(stock_urls)):
@@ -34,17 +36,28 @@ def get_data():
             url = stock_urls[stock_urls_i]
             content = urllib.request.urlopen(url).read()
             soup = BeautifulSoup(content)
+            #---------------------
+            options = Options()
+            options.add_argument('--headless')
+            options.add_argument("--disable-notifications")
+            chrome = webdriver.Chrome('./chromedriver', chrome_options=options)
+            chrome.get(url)
+            for x in range(1, 4):
+                chrome.execute_script("window.scrollTo(0,document.body.scrollHeight)")
+                time.sleep(2)
+            soup = BeautifulSoup(chrome.page_source, 'html.parser')
             tables = soup.findAll("li", "List(n)")
+            #---------------------
             ##main-1-ClassQuotesTable-Proxy > div >div.Pos\(r\).Ov\(h\).ClassQuotesTable > div > div > div.table-body-wrapper > ul > li:nth-child(1) > div
             # print(tables[1])
 
-            resource = []
-            x = tables[0].findAll("tr")
 
+            resource = []
+            print(len(tables))
             for i in range(0, len(tables)):
                 # print(tables[i])
                 y = tables[i].find("span", class_="Fz(14px) C(#979ba7) Ell")
-                #print(y)
+                # print(y)
                 p1 = y.text.split(".")
                 p1 = p1[0]
                 z = tables[i].find("a")
@@ -61,3 +74,4 @@ def get_data():
 
 if __name__ == '__main__':
     get_data()
+    print("FINISH.")
